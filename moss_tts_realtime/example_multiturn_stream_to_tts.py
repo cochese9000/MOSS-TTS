@@ -208,16 +208,19 @@ def run_one_turn(
 
 
 def build_arg_parser() -> argparse.ArgumentParser:
+    model_id = "OpenMOSS-Team/MOSS-TTS-Realtime"
+    codec_path = "OpenMOSS-Team/MOSS-Audio-Tokenizer"
+
     p = argparse.ArgumentParser(
         description="Simulation multiple rounds LLM streaming text → TTS streaming audio。"
     )
-    p.add_argument("--model_path", type=str, required=True)
-    p.add_argument("--codec_path", type=str, required=True)
+    p.add_argument("--model_path", type=str, default=model_id)
+    p.add_argument("--codec_path", type=str, default=codec_path)
     p.add_argument(
         "--prompt_wav",
         type=str,
-        required=True,
         help="Timbre prompt audio",
+        default="audio/prompt_audio.mp3"
     )
     p.add_argument(
         "--out_dir",

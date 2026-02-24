@@ -7,6 +7,7 @@ from transformers import AutoTokenizer
 from mossttsrealtime.modeling_mossttsrealtime import MossTTSRealtime
 from inferencer import MossTTSRealtimeInference
 from transformers import AutoModel
+from huggingface_hub import snapshot_download, login, whoami
 
 MAX_CHANNELS = 16
 CODEC_SAMPLE_RATE = 24000
@@ -45,9 +46,14 @@ def main(model_path, codec_path):
 
     inferencer = MossTTSRealtimeInference(model, tokenizer, max_length=5000, codec=codec, codec_sample_rate=CODEC_SAMPLE_RATE, codec_encode_kwargs={"chunk_duration": 8})
     
-    text = ["Welcome to the world of MOSS TTS Realtime. Experience how text transforms into smooth, human-like speech in real time.", "MOSS TTS Realtime is a context-aware multi-turn streaming TTS, a speech generation foundation model designed for voice agents."]
+    text = [
+        "Welcome to the world of MOSS TTS Realtime. Experience how text transforms into smooth, human-like speech in real time.", 
+        "MOSS TTS Realtime is a context-aware multi-turn streaming TTS, a speech generation foundation model designed for voice agents."
+    ]
+    # reference_audio_path = ["./audio/xiw.wav", "./audio/jamal.wav"]
     reference_audio_path = ["./audio/prompt_audio.mp3", "./audio/prompt_audio1.mp3"]
 
+    print("generating...")
     result = inferencer.generate(
         text=text,
         reference_audio_path=reference_audio_path,
@@ -58,7 +64,7 @@ def main(model_path, codec_path):
         repetition_window = 50,
         device = device,
     )
-
+    print("generated.")
     for i, generated_tokens, in enumerate[Any](result):
         output = torch.tensor(generated_tokens).to(device)
         decode_result = codec.decode(output.permute(1, 0), chunk_duration=8)
@@ -66,11 +72,33 @@ def main(model_path, codec_path):
 
         if wav.ndim == 1:
             wav = wav.unsqueeze(0)
-
-        torchaudio.save(f'{i}.wav', wav, CODEC_SAMPLE_RATE)
+        print(f"saving {i}")
+        torchaudio.save(f'./output/{i}.wav', wav, CODEC_SAMPLE_RATE)
+    print("Finished.")
 
 
 if __name__ == "__main__":
-    model_path = "OpenMOSS-Team/MOSS-TTS-Realtime"
+    model_id = "OpenMOSS-Team/MOSS-TTS-Realtime"
     codec_path = "OpenMOSS-Team/MOSS-Audio-Tokenizer"
-    main(model_path, codec_path) 
+
+
+    try:
+        user_info = whoami()
+        print(f"Logged in as: {user_info['name']}")
+            
+        # Download the model files first
+        print(f"Downloading {model_id}...")
+
+        # This downloads to HF cache but returns the local path
+        model_path = snapshot_download(
+            repo_id=model_id,
+            local_files_only=False
+        )
+
+        print(f"Downloaded to: {model_path}")
+    except:
+        print("Not logged in")
+        # Replace with your actual token
+        # login(token="hf_your_token_here")
+
+    main(model_path, codec_path)

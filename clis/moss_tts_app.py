@@ -1,3 +1,4 @@
+import os
 import argparse
 import functools
 import importlib.util
@@ -9,6 +10,7 @@ import orjson
 import gradio as gr
 import numpy as np
 import torch
+from huggingface_hub import snapshot_download, login, whoami
 from transformers import AutoModel, AutoProcessor
 
 # Disable the broken cuDNN SDPA backend
@@ -18,7 +20,27 @@ torch.backends.cuda.enable_flash_sdp(True)
 torch.backends.cuda.enable_mem_efficient_sdp(True)
 torch.backends.cuda.enable_math_sdp(True)
 
-MODEL_PATH = "OpenMOSS-Team/MOSS-TTS"
+try:
+    user_info = whoami()
+    print(f"Logged in as: {user_info['name']}")
+except:
+    print("Not logged in")
+    # Replace with your actual token
+    # login(token="hf_your_token_here")
+
+# Download the model files first
+model_id = "OpenMOSS-Team/MOSS-TTS"
+print(f"Downloading {model_id}...")
+
+# This downloads to HF cache but returns the local path
+MODEL_PATH = snapshot_download(
+    repo_id=model_id,
+    local_files_only=False
+)
+
+print(f"Downloaded to: {MODEL_PATH}")
+
+# MODEL_PATH = "OpenMOSS-Team/MOSS-TTS"
 DEFAULT_ATTN_IMPLEMENTATION = "auto"
 DEFAULT_MAX_NEW_TOKENS = 4096
 CONTINUATION_NOTICE = (
@@ -89,7 +111,7 @@ def load_backend(model_path: str, device_str: str, attn_implementation: str):
 
     processor = AutoProcessor.from_pretrained(
         model_path,
-        trust_remote_code=True,
+        trust_remote_code=True
     )
     if hasattr(processor, "audio_tokenizer"):
         processor.audio_tokenizer = processor.audio_tokenizer.to(device)
@@ -579,8 +601,8 @@ def main():
     parser.add_argument("--model_path", type=str, default=MODEL_PATH)
     parser.add_argument("--device", type=str, default="cuda:0")
     parser.add_argument("--attn_implementation", type=str, default=DEFAULT_ATTN_IMPLEMENTATION)
-    parser.add_argument("--host", type=str, default="0.0.0.0")
-    parser.add_argument("--port", type=int, default=7860)
+    parser.add_argument("--host", type=str, default="127.0.0.1")
+    parser.add_argument("--port", type=int, default=8084)
     parser.add_argument("--share", action="store_true")
     args = parser.parse_args()
 

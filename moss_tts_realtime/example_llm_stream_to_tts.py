@@ -185,12 +185,20 @@ def run_streaming_tts(
 
 
 def main():
+    model_id = "OpenMOSS-Team/MOSS-TTS-Realtime"
+    codec_path = "OpenMOSS-Team/MOSS-Audio-Tokenizer"
+
     p = argparse.ArgumentParser(
         description="Simulated LLM streaming text → TTS streaming audio。"
     )
-    p.add_argument("--model_path", type=str, required=True)
-    p.add_argument("--codec_path", type=str, required=True)
-    p.add_argument("--prompt_wav", type=str, required=True)
+    p.add_argument("--model_path", type=str, default=model_id)
+    p.add_argument("--codec_path", type=str, default=codec_path)
+    p.add_argument(
+        "--prompt_wav",
+        type=str,
+        help="Timbre prompt audio",
+        default="audio/prompt_audio.mp3"
+    )
     p.add_argument("--out_wav", type=str, default="out_streaming.wav")
 
     p.add_argument("--device", type=str, default="cuda:0")
@@ -234,6 +242,7 @@ def main():
 
     device = torch.device(args.device)
     dtype = torch.bfloat16 if torch.cuda.is_bf16_supported() else torch.float16
+    torch.set_float32_matmul_precision('high')  # try this for extra perf.
 
     if args.seed is not None:
         torch.manual_seed(args.seed)

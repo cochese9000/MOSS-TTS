@@ -11,6 +11,7 @@ import numpy as np
 import torch
 import torchaudio
 from transformers import AutoModel, AutoProcessor
+from huggingface_hub import snapshot_download, login, whoami
 
 # Disable the broken cuDNN SDPA backend
 torch.backends.cuda.enable_cudnn_sdp(False)
@@ -19,8 +20,41 @@ torch.backends.cuda.enable_flash_sdp(True)
 torch.backends.cuda.enable_mem_efficient_sdp(True)
 torch.backends.cuda.enable_math_sdp(True)
 
-MODEL_PATH = "OpenMOSS-Team/MOSS-TTSD-v1.0"
-CODEC_MODEL_PATH = "OpenMOSS-Team/MOSS-Audio-Tokenizer"
+try:
+    user_info = whoami()
+    print(f"Logged in as: {user_info['name']}")
+except:
+    print("Not logged in")
+    # Replace with your actual token
+    # login(token="hf_your_token_here")
+
+# Download the model files first
+model_id = "OpenMOSS-Team/MOSS-TTSD-v1.0"
+print(f"Downloading {model_id}...")
+
+# This downloads to HF cache but returns the local path
+MODEL_PATH = snapshot_download(
+    repo_id=model_id,
+    local_files_only=False
+)
+
+print(f"Downloaded to: {MODEL_PATH}")
+
+codec_model_id = "OpenMOSS-Team/MOSS-Audio-Tokenizer"
+print(f"Downloading {codec_model_id}...")
+
+# This downloads to HF cache but returns the local path
+CODEC_MODEL_PATH = snapshot_download(
+    repo_id=codec_model_id,
+    resume_download=False,
+    force_download=True,  # Force fresh download
+    local_files_only=False
+)
+
+print(f"Downloaded to: {MODEL_PATH}")
+
+# MODEL_PATH = "OpenMOSS-Team/MOSS-TTSD-v1.0"
+# CODEC_MODEL_PATH = "OpenMOSS-Team/MOSS-Audio-Tokenizer"
 DEFAULT_ATTN_IMPLEMENTATION = "auto"
 DEFAULT_MAX_NEW_TOKENS = 2000
 MIN_SPEAKERS = 1

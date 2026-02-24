@@ -29,7 +29,7 @@ torch._dynamo.config.cache_size_limit = 64
 SAMPLE_RATE = 24000
 CODEC_MODEL_PATH = "OpenMOSS-Team/MOSS-Audio-Tokenizer"
 MODEL_PATH = (
-    "/OpenMOSS-Team/MOSS-TTS-Realtime"
+    "OpenMOSS-Team/MOSS-TTS-Realtime"
 )
 TOKENIZER_PATH = "OpenMOSS-Team/MOSS-TTS-Realtime"
 PROMPT_WAV = "./audio/prompt_audio1.mp3"
@@ -295,6 +295,7 @@ def _load_backend(
         raise RuntimeError("CUDA is required for the MossTTSRealtime streaming demo.")
 
     device = torch.device(device_str)
+    # torch.set_float32_matmul_precision('high')  # try this for extra perf.
     tokenizer = AutoTokenizer.from_pretrained(tokenizer_path)
     processor = MossTTSRealtimeProcessor(tokenizer)
 
@@ -303,8 +304,10 @@ def _load_backend(
         model = MossTTSRealtime.from_pretrained(model_path, attn_implementation=attn_impl, torch_dtype=dtype).to(device)
         if hasattr(model, "language_model") and hasattr(model.language_model, "config"):
             model.language_model.config.attn_implementation = "flash_attention_2"
+        print("Using Flash Attn 2")
     else:
         model = MossTTSRealtime.from_pretrained(model_path, torch_dtype=dtype).to(device)
+        print("Flash Attn 2 Not Found. Using Fallback.")
     model.eval()
 
     codec = _load_codec(device, codec_model_path)
@@ -974,23 +977,23 @@ def main():
     parser = argparse.ArgumentParser(description="MossTTSRealtime streaming TTS Gradio demo")
     parser.add_argument("--model_path", type=str, default=MODEL_PATH)
     parser.add_argument("--tokenizer_path", type=str, default=TOKENIZER_PATH)
-    parser.add_argument("--codec_model_path",type=str,default=None,)
+    parser.add_argument("--codec_model_path",type=str,default=CODEC_MODEL_PATH)
     parser.add_argument("--codec_root", type=str, default=None)
     parser.add_argument("--codec_config", type=str, default=None)
     parser.add_argument("--codec_ckpt", type=str, default=None)
     parser.add_argument("--device", type=str, default="cuda:0")
     parser.add_argument("--attn_implementation", type=str, default="sdpa")
-    parser.add_argument("--host", type=str, default="0.0.0.0")
-    parser.add_argument("--port", type=int, default=8082)
+    parser.add_argument("--host", type=str, default="127.0.0.1")
+    parser.add_argument("--port", type=int, default=8084)
     parser.add_argument("--share", action="store_true")
     args = parser.parse_args()
 
-    codec_model_path = _resolve_path(args.codec_model_path, "MossTTSRealtime_CODEC_MODEL_PATH", CODEC_MODEL_PATH)
-    if codec_model_path is None or not codec_model_path.exists():
-        raise FileNotFoundError(
-            "Codec model path not found. Set --codec_model_path or env MossTTSRealtime_CODEC_MODEL_PATH."
-        )
-    args.codec_model_path = str(codec_model_path)
+    # codec_model_path = _resolve_path(args.codec_model_path, "MossTTSRealtime_CODEC_MODEL_PATH", CODEC_MODEL_PATH)
+    # if codec_model_path is None or not codec_model_path.exists():
+    #     raise FileNotFoundError(
+    #         "Codec model path not found. Set --codec_model_path or env MossTTSRealtime_CODEC_MODEL_PATH."
+    #     )
+    args.codec_model_path = str(args.codec_model_path)
 
     demo = _build_demo(args)
     demo.queue(max_size=10, default_concurrency_limit=1).launch(
