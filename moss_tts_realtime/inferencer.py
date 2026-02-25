@@ -5,7 +5,7 @@ from typing import Optional, List, Union, Any
 from transformers import AutoTokenizer
 import numpy as np
 from mossttsrealtime.modeling_mossttsrealtime import MossTTSRealtime
-from transformers.cache_utils import StaticCache
+from transformers.cache_utils import StaticCache, DynamicCache
 
 
 class MossTTSRealtimeProcessor():
@@ -363,7 +363,8 @@ class MossTTSRealtimeInference:
         local_inputs = hidden_states.reshape(-1, 1, self.model.config.local_config.hidden_size)
         output_token = torch.empty(batch_size, self.channels, dtype=torch.long, device=device)
 
-        past_key_values = StaticCache(config=self.model.local_transformer.config, max_cache_len=self.channels)
+        # past_key_values = StaticCache(config=self.model.local_transformer.config, max_cache_len=self.channels)
+        past_key_values = DynamicCache(config=self.model.local_transformer.config, max_cache_len=self.channels)
         local_token = None
 
         cache_pos_t = torch.zeros(1, dtype=torch.long, device=device)

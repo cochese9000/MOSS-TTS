@@ -13,12 +13,12 @@ import torch
 from huggingface_hub import snapshot_download, login, whoami
 from transformers import AutoModel, AutoProcessor
 
-# Disable the broken cuDNN SDPA backend
-torch.backends.cuda.enable_cudnn_sdp(False)
-# Keep these enabled as fallbacks
-torch.backends.cuda.enable_flash_sdp(True)
-torch.backends.cuda.enable_mem_efficient_sdp(True)
-torch.backends.cuda.enable_math_sdp(True)
+# # Disable the broken cuDNN SDPA backend
+# torch.backends.cuda.enable_cudnn_sdp(False)
+# # Keep these enabled as fallbacks
+# torch.backends.cuda.enable_flash_sdp(True)
+# torch.backends.cuda.enable_mem_efficient_sdp(True)
+# torch.backends.cuda.enable_math_sdp(True)
 
 try:
     user_info = whoami()
@@ -346,6 +346,7 @@ def run_inference(
     input_ids = batch["input_ids"].to(torch_device)
     attention_mask = batch["attention_mask"].to(torch_device)
 
+    print("generating...")
     with torch.no_grad():
         outputs = model.generate(
             input_ids=input_ids,
@@ -356,7 +357,7 @@ def run_inference(
             audio_top_k=int(top_k),
             audio_repetition_penalty=float(repetition_penalty),
         )
-
+    print("finished generating.")
     messages = processor.decode(outputs)
     if not messages or messages[0] is None:
         raise RuntimeError("The model did not return a decodable audio result.")
