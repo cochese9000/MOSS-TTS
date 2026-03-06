@@ -24,9 +24,12 @@ from transformers import AutoModel, AutoProcessor
 
 from moss_tts_delay.llama_cpp.pipeline import PipelineConfig, LlamaCppPipeline
 
-# New storage directory for your session iterations
-ITERATION_DIR = Path("iterations")
-ITERATION_DIR.mkdir(exist_ok=True)
+# New storage directories for your session
+ITERATION_DIR = Path("output/iterations")
+ITERATION_DIR.mkdir(parents=True, exist_ok=True)
+
+REF_SAVE_DIR = Path("reference_audio")
+REF_SAVE_DIR.mkdir(parents=True, exist_ok=True)
 
 try:
     user_info = whoami()
@@ -129,10 +132,11 @@ def load_active_backend(model_type: str, gguf_file: str, args: argparse.Namespac
             audio_backend="onnx", # Using ONNX if installed
             audio_encoder_onnx="weights/MOSS-Audio-Tokenizer-ONNX/encoder.onnx",
             audio_decoder_onnx="weights/MOSS-Audio-Tokenizer-ONNX/decoder.onnx",
-            heads_backend="auto",
+            heads_backend="torch", # CRITICAL: Accelerate LM heads using GPU PyTorch instead of CPU numpy
             n_ctx=4096,
             max_new_tokens=2000,
-            use_gpu_audio=True
+            use_gpu_audio=True,
+            n_gpu_layers=-1 # CRITICAL: Fully offload all layers to GPU!
         )
         
         # Verify paths are present (will throw if missing)
@@ -161,12 +165,11 @@ def load_active_backend(model_type: str, gguf_file: str, args: argparse.Namespac
 # --- STATE & STORAGE HELPERS ---
 
 def load_startup_gallery():
-    """Loads previously saved *reference* wav files from the iterations directory on startup.
+    """Loads previously saved *reference* wav files from the reference_audio directory on startup.
     Only includes files explicitly saved as references or uploads, skipping auto-generated lines."""
     gallery = {}
-    if ITERATION_DIR.exists():
-        for filepath in sorted(ITERATION_DIR.glob("*.wav"), key=os.path.getmtime):
-            # Only include files that start with 'Ref_' or 'UPLOAD_' (our manual saves)
+    if REF_SAVE_DIR.exists():
+        for filepath in sorted(REF_SAVE_DIR.glob("*.wav"), key=os.path.getmtime):
             if filepath.name.startswith("Ref_") or filepath.name.startswith("UPLOAD_"):
                 # Use the filename as the display label
                 gallery[filepath.stem] = str(filepath)
@@ -185,12 +188,12 @@ def save_to_gallery(audio_data, name, text_snippet, current_gallery):
     return current_gallery, str(filepath)
 
 def add_custom_ref(file_path, custom_name, current_gallery):
-    """Handles manual file uploads to the gallery."""
+    """Handles manual file uploads to the reference gallery."""
     if not file_path or not custom_name:
         return current_gallery, gr.update()
     
     safe_name = re.sub(r'[^\w\s-]', '', custom_name).strip().replace(" ", "_")
-    dest_path = ITERATION_DIR / f"Ref_{safe_name}.wav"
+    dest_path = REF_SAVE_DIR / f"Ref_{safe_name}.wav"
     shutil.copy(file_path, dest_path)
     
     current_gallery[f"UPLOAD_{custom_name}"] = str(dest_path)
