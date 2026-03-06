@@ -16,27 +16,48 @@ import numpy as np
 
 log = logging.getLogger(__name__)
 
-_LIB_NAME = "libbackbone_bridge.so"
+import platform
 
+_LIB_NAMES = ["backbone_bridge.dll", "libbackbone_bridge.so", "libbackbone_bridge.dylib"]
+if platform.system() == "Windows":
+    _LIB_NAMES.insert(0, "libbackbone_bridge.dll")
 
 def _find_bridge_lib() -> Path:
     """Locate the compiled bridge shared library."""
-    candidates = [
-        Path(__file__).parent / _LIB_NAME,
-        Path(__file__).parent / "build" / _LIB_NAME,
-        Path(__file__).parent.parent.parent / "build" / _LIB_NAME,
-    ]
+    candidates = []
+    for name in _LIB_NAMES:
+        candidates.extend([
+            Path(__file__).parent / name,
+            Path(__file__).parent / "build" / name,
+            Path(__file__).parent.parent.parent / "build" / name,
+        ])
     for p in candidates:
         if p.exists():
             return p
     raise FileNotFoundError(
-        f"Cannot find {_LIB_NAME}. Compile with:\n"
-        f"  cd {Path(__file__).parent} && bash build_bridge.sh /path/to/llama.cpp"
+        f"Cannot find compiled bridge. Compile it according to the README instructions in moss_tts_delay/llama_cpp."
     )
 
 
 def _load_bridge(lib_path: Path):
     """Load the C bridge and set up function signatures."""
+    if platform.system() == "Windows":
+        import os
+        # Add the parent directory of lib_path to the DLL search path to find local dependencies
+        try:
+            os.add_dll_directory(str(lib_path.parent))
+        except AttributeError:
+            # Fallback for older python versions, though 3.8+ supports add_dll_directory
+            os.environ["PATH"] = str(lib_path.parent) + os.pathsep + os.environ["PATH"]
+            
+        # Also need to find llama.dll. Find the build dir of llama.cpp
+        llama_cpp_build = Path("o:/voc/llama.cpp/build/bin/Release")
+        if llama_cpp_build.exists():
+            try:
+                os.add_dll_directory(str(llama_cpp_build))
+            except AttributeError:
+                os.environ["PATH"] = str(llama_cpp_build) + os.pathsep + os.environ["PATH"]
+                
     lib = ctypes.CDLL(str(lib_path))
 
     lib.bridge_create.argtypes = [

@@ -2,5 +2,8 @@
 # Format: shortcut_name: command to run
 
 cam: conda activate moss
-moss: python .\clis\moss_tts2.py
+# moss2: python .\clis\moss_tts2.py
+moss: python .\clis\tts3.py
+
+
 

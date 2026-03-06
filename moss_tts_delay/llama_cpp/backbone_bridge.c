@@ -15,6 +15,12 @@
 #include <string.h>
 #include <stdio.h>
 
+#if defined(_WIN32)
+#define BRIDGE_API __declspec(dllexport)
+#else
+#define BRIDGE_API __attribute__((visibility("default")))
+#endif
+
 typedef struct {
     struct llama_model   *model;
     struct llama_context *ctx;
@@ -23,7 +29,7 @@ typedef struct {
 
 /* Create model + context with embeddings enabled.
  * Returns opaque handle, or NULL on failure. */
-bridge_handle_t *bridge_create(
+BRIDGE_API bridge_handle_t *bridge_create(
     const char *model_path,
     int32_t     n_ctx,
     int32_t     n_batch,
@@ -67,7 +73,7 @@ bridge_handle_t *bridge_create(
 /* Feed one embedding vector at a given position.
  * embd: float array of size n_embd.
  * Returns 0 on success, non-zero on error. */
-int32_t bridge_decode_embd(
+BRIDGE_API int32_t bridge_decode_embd(
     bridge_handle_t *h,
     const float     *embd,
     int32_t          pos,
@@ -91,7 +97,7 @@ int32_t bridge_decode_embd(
  * pos_start: position of first token.
  * output_last: if true, request output only for the last token.
  * Returns 0 on success, non-zero on error. */
-int32_t bridge_decode_embd_batch(
+BRIDGE_API int32_t bridge_decode_embd_batch(
     bridge_handle_t *h,
     const float     *embds,
     int32_t          n_tokens,
@@ -117,7 +123,7 @@ int32_t bridge_decode_embd_batch(
 /* Get the embedding/hidden-state for the i-th output token.
  * Returns pointer to n_embd floats (owned by llama.cpp, valid until next decode).
  * i = -1 means the last output token. */
-float *bridge_get_embeddings(bridge_handle_t *h, int32_t i)
+BRIDGE_API float *bridge_get_embeddings(bridge_handle_t *h, int32_t i)
 {
     return llama_get_embeddings_ith(h->ctx, i);
 }
@@ -125,26 +131,26 @@ float *bridge_get_embeddings(bridge_handle_t *h, int32_t i)
 /* Get the logits for the i-th output token.
  * Returns pointer to n_vocab floats (owned by llama.cpp, valid until next decode).
  * i = -1 means the last output token. */
-float *bridge_get_logits(bridge_handle_t *h, int32_t i)
+BRIDGE_API float *bridge_get_logits(bridge_handle_t *h, int32_t i)
 {
     return llama_get_logits_ith(h->ctx, i);
 }
 
 /* Return the embedding dimension. */
-int32_t bridge_n_embd(bridge_handle_t *h)
+BRIDGE_API int32_t bridge_n_embd(bridge_handle_t *h)
 {
     return h->n_embd;
 }
 
 /* Return the vocabulary size. */
-int32_t bridge_n_vocab(bridge_handle_t *h)
+BRIDGE_API int32_t bridge_n_vocab(bridge_handle_t *h)
 {
     const struct llama_vocab *vocab = llama_model_get_vocab(h->model);
     return llama_vocab_n_tokens(vocab);
 }
 
 /* Clear KV cache. */
-void bridge_clear_kv(bridge_handle_t *h)
+BRIDGE_API void bridge_clear_kv(bridge_handle_t *h)
 {
     llama_memory_t mem = llama_get_memory(h->ctx);
     if (mem) {
@@ -153,7 +159,7 @@ void bridge_clear_kv(bridge_handle_t *h)
 }
 
 /* Free everything. */
-void bridge_free(bridge_handle_t *h)
+BRIDGE_API void bridge_free(bridge_handle_t *h)
 {
     if (!h) return;
     if (h->ctx)   llama_free(h->ctx);
