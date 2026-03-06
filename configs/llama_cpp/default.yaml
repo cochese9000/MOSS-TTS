@@ -1,0 +1,59 @@
+# MOSS-TTS-Delay — llama.cpp Backend (ONNX audio, default)
+#
+# Torch-free minimal installation:
+#   pip install -e ".[llama-cpp-onnx]"
+#
+# Download pre-quantized weights:
+#   huggingface-cli download OpenMOSS-Team/MOSS-TTS-GGUF --local-dir weights/MOSS-TTS-GGUF
+#
+# Download ONNX audio tokenizer:
+#   huggingface-cli download OpenMOSS-Team/MOSS-Audio-Tokenizer-ONNX --local-dir weights/MOSS-Audio-Tokenizer-ONNX
+#
+# All paths are relative to the project root.
+
+# ── Model paths ──────────────────────────────────────────────────────────────
+
+# Pre-quantized GGUF backbone (Q4_K_M)
+backbone_gguf: weights/MOSS-TTS-GGUF/MOSS_TTS_backbone_q4km.gguf
+
+# Pre-extracted .npy embedding tables and LM head weights
+embedding_dir: weights/MOSS-TTS-GGUF/embeddings
+lm_head_dir: weights/MOSS-TTS-GGUF/lm_heads
+
+# Tokenizer directory (ships with GGUF repo)
+tokenizer_dir: weights/MOSS-TTS-GGUF/tokenizer
+
+# ── Audio tokenizer ──────────────────────────────────────────────────────────
+# We provide ONNX models only.  For TensorRT, build engines yourself
+# (see moss_audio_tokenizer/trt/build_engine.sh).
+
+audio_backend: onnx
+audio_encoder_onnx: weights/MOSS-Audio-Tokenizer-ONNX/encoder.onnx
+audio_decoder_onnx: weights/MOSS-Audio-Tokenizer-ONNX/decoder.onnx
+
+# ── LM heads backend ────────────────────────────────────────────────────────
+# "auto" = use torch if available, else numpy
+# "numpy" = force numpy (torch-free)
+# "torch" = force torch (error if unavailable)
+
+heads_backend: auto
+
+# ── Runtime settings ─────────────────────────────────────────────────────────
+
+n_ctx: 4096
+n_batch: 512
+n_threads: 4
+n_gpu_layers: -1
+max_new_tokens: 2000
+use_gpu_audio: true
+
+# ── Sampling parameters ──────────────────────────────────────────────────────
+
+text_temperature: 1.5
+text_top_p: 1.0
+text_top_k: 50
+
+audio_temperature: 1.7
+audio_top_p: 0.8
+audio_top_k: 25
+audio_repetition_penalty: 1.0

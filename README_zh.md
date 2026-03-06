@@ -12,6 +12,7 @@
 
 
 <div align="center">
+  <a href="https://clawhub.ai/luogao2333/moss-tts-voice"><img src="https://img.shields.io/badge/🦞_OpenClaw-Skills-8A2BE2" alt="OpenClaw"></a>
   <a href="https://huggingface.co/collections/OpenMOSS-Team/moss-tts"><img src="https://img.shields.io/badge/Huggingface-Models-orange?logo=huggingface&amp"></a>
   <a href="https://modelscope.cn/collections/OpenMOSS-Team/MOSS-TTS"><img src="https://img.shields.io/badge/ModelScope-Models-lightgrey?logo=modelscope&amp"></a>
   <a href="https://mosi.cn/#models"><img src="https://img.shields.io/badge/Blog-View-blue?logo=internet-explorer&amp"></a>
@@ -33,6 +34,8 @@ MOSS‑TTS 家族是由 [MOSI.AI](https://mosi.cn/#hero) 与 [OpenMOSS 团队](h
 
 <a id="news"></a>
 ## 新闻
+* 2026.3.4：新增 **无 PyTorch 推理** 支持 — 通过 [llama.cpp](https://github.com/ggerganov/llama.cpp) + ONNX Runtime 实现端侧轻量部署。量化 GGUF 权重发布于 [`OpenMOSS-Team/MOSS-TTS-GGUF`](https://huggingface.co/OpenMOSS-Team/MOSS-TTS-GGUF)，ONNX 音频编解码器发布于 [`OpenMOSS-Team/MOSS-Audio-Tokenizer-ONNX`](https://huggingface.co/OpenMOSS-Team/MOSS-Audio-Tokenizer-ONNX)。详见 [llama.cpp 后端](#llamacpp-后端无-pytorch-推理)。
+* 2026.3.4：🎉 我们在 🦞 龙虾 的 [ClawHub](https://clawhub.ai) 平台上架了 MOSS-TTS skills：[feishu-voice-tts](https://clawhub.ai/helloeveryworlds/feishu-voice-tts) 与 [moss-tts-voice](https://clawhub.ai/luogao2333/moss-tts-voice)。
 * 2026.2.10：🎉🎉🎉 我们已发布 [MOSS-TTS Family](https://huggingface.co/collections/OpenMOSS-Team/moss-tts)。更多详情请查看我们的 [Blog](https://mosi.cn/#models)！我们的 Huggingface Space 在这里：[MOSS-TTS](https://huggingface.co/spaces/OpenMOSS-Team/MOSS-TTS), [MOSS-TTSD-v1.0](https://huggingface.co/spaces/OpenMOSS-Team/MOSS-TTSD-v1.0), [MOSS-VoiceGenerator](https://huggingface.co/spaces/OpenMOSS-Team/MOSS-VoiceGenerator).
 
 ## 演示
@@ -49,9 +52,11 @@ MOSS‑TTS 家族是由 [MOSI.AI](https://mosi.cn/#hero) 与 [OpenMOSS 团队](h
 - [已发布模型](#released-models)
 - [支持的语言](#supported-languages)
 - [快速开始](#quickstart)
+  - [OpenClaw API Skills](#openclaw-api-skills)
   - [环境准备](#environment-setup)
   - [（可选）安装 FlashAttention 2](#optional-install-flashattention-2)
   - [基础用法](#moss-tts-basic-usage)
+- [llama.cpp 后端（无 PyTorch 推理）](#llamacpp-后端无-pytorch-推理)
 - [评测](#evaluation)
   - [MOSS-TTS 评测](#eval-moss-tts)
   - [MOSS-TTSD 评测](#eval-moss-ttsd)
@@ -113,10 +118,10 @@ MOSS-TT、MOSS-TTSD 和 MOSS-TTS-Realtime 目前支持 **20 种语言**：
 |---|---|---|---|---|---|---|---|---|
 | 中文 | zh | 🇨🇳 | 英语 | en | 🇺🇸 | 德语 | de | 🇩🇪 |
 | 西班牙语 | es | 🇪🇸 | 法语 | fr | 🇫🇷 | 日语 | ja | 🇯🇵 |
-| 意大利语 | it | 🇮🇹 | 希伯来语 | he | 🇮🇱 | 韩语 | ko | 🇰🇷 |
+| 意大利语 | it | 🇮🇹 | 匈牙利语 | hu | 🇭🇺 | 韩语 | ko | 🇰🇷 |
 | 俄语 | ru | 🇷🇺 | 波斯语（法尔西语） | fa | 🇮🇷 | 阿拉伯语 | ar | 🇸🇦 |
 | 波兰语 | pl | 🇵🇱 | 葡萄牙语 | pt | 🇵🇹 | 捷克语 | cs | 🇨🇿 |
-| 丹麦语 | da | 🇩🇰 | 瑞典语 | sv | 🇸🇪 | 匈牙利语 | hu | 🇭🇺 |
+| 丹麦语 | da | 🇩🇰 | 瑞典语 | sv | 🇸🇪 | | | |
 | 希腊语 | el | 🇬🇷 | 土耳其语 | tr | 🇹🇷 |  |  |  |
 
 
@@ -124,10 +129,21 @@ MOSS-TT、MOSS-TTSD 和 MOSS-TTS-Realtime 目前支持 **20 种语言**：
 <a id="quickstart"></a>
 ## 快速开始
 
+### OpenClaw API Skills
+
+我们在🦞 龙虾 的 [ClawHub](https://clawhub.ai) 平台上架了 MOSS-TTS skills。API Key 可在 [MOSI AI Studio](https://studio.mosi.cn) 获取。
+
+| Skill | 说明 | 安装命令 |
+|---|---|---|
+| [`feishu-voice-tts`](https://clawhub.ai/helloeveryworlds/feishu-voice-tts) | 在飞书发送语音消息 | `clawhub install feishu-voice-tts` |
+| [`moss-tts-voice`](https://clawhub.ai/luogao2333/moss-tts-voice) | 调用 MOSS-TTS API 生成语音 | `clawhub install moss-tts-voice` |
+
 <a id="environment-setup"></a>
 ### 环境准备
 
 建议使用干净的 Python 环境。
+
+#### 使用 Conda
 
 ```bash
 conda create -n moss-tts python=3.12 -y
@@ -139,25 +155,52 @@ conda activate moss-tts
 ```bash
 git clone https://github.com/OpenMOSS/MOSS-TTS.git
 cd MOSS-TTS
-pip install --extra-index-url https://download.pytorch.org/whl/cu128 -e .
+pip install --extra-index-url https://download.pytorch.org/whl/cu128 -e ".[torch-runtime]"
+```
+
+#### 使用 `uv`
+
+```bash
+# 请先安装 uv：https://docs.astral.sh/uv/getting-started/installation/
+git clone https://github.com/OpenMOSS/MOSS-TTS.git
+cd MOSS-TTS
+uv venv --python 3.12 .venv
+source .venv/bin/activate
+uv pip install --torch-backend cu128 -e ".[torch-runtime]"
 ```
 <a id="optional-install-flashattention-2"></a>
 #### （可选）安装 FlashAttention 2
 
 如果你的硬件支持，可以安装 FlashAttention 2 以提升速度并降低显存占用。
 
+如果你使用 Conda/pip：
+
 ```bash
-pip install --extra-index-url https://download.pytorch.org/whl/cu128 -e ".[flash-attn]"
+pip install --extra-index-url https://download.pytorch.org/whl/cu128 -e ".[torch-runtime,flash-attn]"
 ```
 
 如果机器内存较小、CPU 核数较多，可以限制并行编译数：
 
 ```bash
-MAX_JOBS=4 pip install --extra-index-url https://download.pytorch.org/whl/cu128 -e ".[flash-attn]"
+MAX_JOBS=4 pip install --extra-index-url https://download.pytorch.org/whl/cu128 -e ".[torch-runtime,flash-attn]"
+```
+
+如果你使用 `uv`：
+
+```bash
+uv pip install --torch-backend cu128 -e ".[torch-runtime,flash-attn]"
+```
+
+如果机器内存较小、CPU 核心较多，可以限制并行编译数：
+
+```bash
+MAX_JOBS=4 uv pip install --torch-backend cu128 -e ".[torch-runtime,flash-attn]"
 ```
 
 说明：
 - 依赖统一在 `pyproject.toml` 中管理，当前固定了 `torch==2.9.1+cu128` 和 `torchaudio==2.9.1+cu128`。
+- `uv` 方案中使用 `--torch-backend cu128`，由 uv 处理 PyTorch CUDA 轮子来源，同时其余依赖仍使用默认安全索引策略解析。
+- 如果需要其他后端，可将 `cu128` 替换为目标后端（例如 `cpu`、`cu126`）。
 - 如果 FlashAttention 2 编译失败，可以跳过，直接使用默认 attention 后端。
 - FlashAttention 2 仅支持部分 GPU，通常搭配 `torch.float16` 或 `torch.bfloat16` 使用。
 
@@ -287,6 +330,62 @@ with torch.no_grad():
 各模型的完整使用方式请参考对应的 model card。
 
 
+## llama.cpp 后端（无 PyTorch 推理）
+
+MOSS-TTS 支持使用 [llama.cpp](https://github.com/ggerganov/llama.cpp) 运行 Qwen3 backbone，配合 ONNX Runtime / TensorRT 运行音频编解码器，实现 **完全无 PyTorch 依赖** 的轻量端侧推理。
+
+### 快速开始
+
+```bash
+# 1. 安装（无 PyTorch）
+pip install -e ".[llama-cpp-onnx]"
+
+# 2. 下载预量化 backbone + embedding/lm_head 权重
+huggingface-cli download OpenMOSS-Team/MOSS-TTS-GGUF --local-dir weights/MOSS-TTS-GGUF
+
+# 3. 下载 ONNX 音频编解码器
+huggingface-cli download OpenMOSS-Team/MOSS-Audio-Tokenizer-ONNX --local-dir weights/MOSS-Audio-Tokenizer-ONNX
+
+# 4. 编译 C bridge（一次性，需要 llama.cpp 源码编译）
+cd moss_tts_delay/llama_cpp && bash build_bridge.sh /path/to/llama.cpp && cd ../..
+
+# 5. 推理
+python -m moss_tts_delay.llama_cpp \
+    --config configs/llama_cpp/default.yaml \
+    --text "你好世界！" --output output.wav
+```
+
+### 安装方案
+
+| 方案 | 安装命令 | 依赖 | 适用场景 |
+|------|---------|------|---------|
+| **无 Torch (ONNX)** | `pip install -e ".[llama-cpp-onnx]"` | numpy, onnxruntime-gpu, tokenizers | 推荐入门方案 |
+| **无 Torch (TRT)** | `pip install -e ".[llama-cpp-trt]"` | numpy, tensorrt, cuda-python | 最高音频编解码器性能（需自行编译 engine） |
+| **Torch 加速** | `pip install -e ".[llama-cpp-onnx,llama-cpp-torch]"` | + torch | GPU 加速 LM heads（约 30 倍提速） |
+
+### 模型权重
+
+| 仓库 | 内容 | 下载命令 |
+|------|------|---------|
+| [`OpenMOSS-Team/MOSS-TTS-GGUF`](https://huggingface.co/OpenMOSS-Team/MOSS-TTS-GGUF) | Q4_K_M backbone `.gguf`、`embeddings/`（`.npy`）、`lm_heads/`（`.npy`）、tokenizer | `huggingface-cli download OpenMOSS-Team/MOSS-TTS-GGUF --local-dir weights/MOSS-TTS-GGUF` |
+| [`OpenMOSS-Team/MOSS-Audio-Tokenizer-ONNX`](https://huggingface.co/OpenMOSS-Team/MOSS-Audio-Tokenizer-ONNX) | Encoder & decoder ONNX 模型 | `huggingface-cli download OpenMOSS-Team/MOSS-Audio-Tokenizer-ONNX --local-dir weights/MOSS-Audio-Tokenizer-ONNX` |
+
+> **注意：** 我们 **不提供** 预编译的 TensorRT engine，因为 TRT engine 与 GPU 架构和 TensorRT 版本强绑定。如需使用 TRT，请从 ONNX 模型自行编译 — 参考 `moss_audio_tokenizer/trt/build_engine.sh`。
+
+### 配置
+
+`configs/llama_cpp/` 中提供了三个预设配置：
+
+- `default.yaml` — ONNX 音频 Tokenizer + GGUF backbone（推荐入门）
+- `trt.yaml` — TensorRT 音频 Tokenizer + GGUF backbone（最大吞吐，需自行编译 engine）
+- `cpu-only.yaml` — 纯 CPU 运行（无需 GPU）
+
+关键配置项：
+- `heads_backend: auto | numpy | torch` — LM heads 计算后端
+- `audio_backend: onnx | trt | torch` — 音频编解码器后端
+
+完整文档请查看 [moss_tts_delay/llama_cpp/README.md](moss_tts_delay/llama_cpp/README.md)。
+
 <a id="evaluation"></a>
 ## 评测
 
@@ -326,7 +425,7 @@ MOSS‑TTS 在开源零样本 TTS 基准 `Seed‑TTS‑eval` 上取得当前最�
 <a id="eval-moss-ttsd"></a>
 ### MOSS‑TTSD 评测
 #### 客观评测
-我们使用三个客观指标来评估 MOSS‑TTSD-v1.0 的性能：说话人切换准确性（ACC）、说话人相似度（SIM）和词错误率（WER）。我们对比了 MOSS‑TTSD-v1.0 与多个开源模型和闭源模型的性能，结果如下，MOSS-TTSD-v1.0 均取得了最优或次优性能。
+我们使用三个客观指标来评估 MOSS‑TTSD-v1.0 的性能：说话人归属准确性（ACC）、说话人相似度（SIM）和词错误率（WER）。我们对比了 MOSS‑TTSD-v1.0 与多个开源模型和闭源模型的性能，结果如下，MOSS-TTSD-v1.0 均取得了最优或次优性能。
 
 | Model | ZH - SIM | ZH - ACC | ZH - WER | EN - SIM | EN - ACC | EN - WER |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
@@ -349,7 +448,7 @@ MOSS‑TTS 在开源零样本 TTS 基准 `Seed‑TTS‑eval` 上取得当前最�
 | Doubao_Podcast | 0.8034 | 0.9606 | **0.0472** | - | - | - |
 
 #### 主观评测
-对于开源模型，标注者会从说话人归因准确性、音色相似度、韵律与整体质量等维度对每个样本对进行评分。遵循 LMSYS Chatbot Arena 的方法，我们计算各维度的 Elo 评分与置信区间。
+对于开源模型，标注者会从说话人归属准确性、音色相似度、韵律与整体质量等维度对每个样本对进行评分。遵循 LMSYS Chatbot Arena 的方法，我们计算各维度的 Elo 评分与置信区间。
 ![alt text](assets/VS_Open-Source_Models.jpg)
 
 对于闭源模型，标注者只需在每个样本对中选择整体更偏好的一项，并据此计算胜率。

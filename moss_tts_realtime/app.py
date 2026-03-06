@@ -30,28 +30,11 @@ SAMPLE_RATE = 24000
 CODEC_MODEL_PATH = "OpenMOSS-Team/MOSS-Audio-Tokenizer"
 MODEL_PATH = (
     "OpenMOSS-Team/MOSS-TTS-Realtime"
+    "OpenMOSS-Team/MOSS-TTS-Realtime"
 )
 TOKENIZER_PATH = "OpenMOSS-Team/MOSS-TTS-Realtime"
 PROMPT_WAV = "./audio/prompt_audio1.mp3"
 USER_WAV = "./audio/user1.wav"
-
-
-
-def _path_or_env(env_name: str, default_path: str | None = None) -> Path | None:
-    value = os.getenv(env_name)
-    if value:
-        return Path(value)
-    if default_path is not None:
-        candidate = Path(default_path)
-        if candidate.exists():
-            return candidate
-    return None
-
-
-def _resolve_path(path_value: str | None, env_name: str, default_path: str | None) -> Path | None:
-    if path_value:
-        return Path(path_value).expanduser()
-    return _path_or_env(env_name, default_path)
 
 
 def _load_audio(path: Path, target_sample_rate: int = SAMPLE_RATE) -> torch.Tensor:
@@ -302,7 +285,11 @@ def _load_backend(
     dtype = torch.bfloat16 if torch.cuda.is_bf16_supported() else torch.float16
     if attn_impl and attn_impl.lower() not in {"none", ""}:
         model = MossTTSRealtime.from_pretrained(model_path, attn_implementation=attn_impl, torch_dtype=dtype).to(device)
-        if hasattr(model, "language_model") and hasattr(model.language_model, "config"):
+        if (
+            attn_impl.lower() == "flash_attention_2"
+            and hasattr(model, "language_model")
+            and hasattr(model.language_model, "config")
+        ):
             model.language_model.config.attn_implementation = "flash_attention_2"
         print("Using Flash Attn 2")
     else:
@@ -977,12 +964,18 @@ def main():
     parser = argparse.ArgumentParser(description="MossTTSRealtime streaming TTS Gradio demo")
     parser.add_argument("--model_path", type=str, default=MODEL_PATH)
     parser.add_argument("--tokenizer_path", type=str, default=TOKENIZER_PATH)
+    parser.add_argument("--codec_model_path", type=str, default=CODEC_MODEL_PATH)
     parser.add_argument("--codec_model_path",type=str,default=CODEC_MODEL_PATH)
     parser.add_argument("--codec_root", type=str, default=None)
     parser.add_argument("--codec_config", type=str, default=None)
     parser.add_argument("--codec_ckpt", type=str, default=None)
     parser.add_argument("--device", type=str, default="cuda:0")
-    parser.add_argument("--attn_implementation", type=str, default="sdpa")
+    parser.add_argument(
+        "--attn_implementation",
+        type=str,
+        default="sdpa",
+        choices=["sdpa", "flash_attention_2", "eager", "none"],
+    )
     parser.add_argument("--host", type=str, default="127.0.0.1")
     parser.add_argument("--port", type=int, default=8084)
     parser.add_argument("--share", action="store_true")

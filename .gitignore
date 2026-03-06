@@ -210,6 +210,9 @@ marimo/_lsp/
 __marimo__/
 dev/*
 
+# Weights
+weights
+
 output
 **/output
 *.wav
