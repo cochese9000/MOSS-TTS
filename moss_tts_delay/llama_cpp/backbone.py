@@ -51,12 +51,15 @@ def _load_bridge(lib_path: Path):
             os.environ["PATH"] = str(lib_path.parent) + os.pathsep + os.environ["PATH"]
             
         # Also need to find llama.dll. Find the build dir of llama.cpp
-        llama_cpp_build = Path("o:/voc/llama.cpp/build/bin/Release")
-        if llama_cpp_build.exists():
-            try:
-                os.add_dll_directory(str(llama_cpp_build))
-            except AttributeError:
-                os.environ["PATH"] = str(llama_cpp_build) + os.pathsep + os.environ["PATH"]
+        llama_cpp_build_msvc = Path("o:/voc/llama.cpp/build/bin/Release")
+        llama_cpp_build_ninja = Path("o:/voc/llama.cpp/build/bin")
+        
+        for build_path in [llama_cpp_build_msvc, llama_cpp_build_ninja]:
+            if build_path.exists():
+                try:
+                    os.add_dll_directory(str(build_path))
+                except AttributeError:
+                    os.environ["PATH"] = str(build_path) + os.pathsep + os.environ["PATH"]
                 
     lib = ctypes.CDLL(str(lib_path))
 

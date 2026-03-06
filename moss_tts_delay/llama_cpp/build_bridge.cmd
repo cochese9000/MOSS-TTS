@@ -20,12 +20,14 @@ if not exist "%LLAMA_CPP_DIR%" (
 set "INCLUDE_DIRS=/I"%LLAMA_CPP_DIR%\include" /I"%LLAMA_CPP_DIR%\ggml\include""
 
 REM The compiled import library (.lib) is usually created in the build\bin\Release or build\src\Release directory
-set "LIB_DIR=%LLAMA_CPP_DIR%\build\bin\Release"
-if not exist "%LIB_DIR%\llama.lib" (
-    set "LIB_DIR=%LLAMA_CPP_DIR%\build\src\Release"
-)
-if not exist "%LIB_DIR%\llama.lib" (
-    echo Error: Could not find llama.lib in %LLAMA_CPP_DIR%\build\bin\Release or %LLAMA_CPP_DIR%\build\src\Release
+set "LIB_DIR="
+if exist "%LLAMA_CPP_DIR%\build\bin\Release\llama.lib" set "LIB_DIR=%LLAMA_CPP_DIR%\build\bin\Release"
+if exist "%LLAMA_CPP_DIR%\build\src\Release\llama.lib" set "LIB_DIR=%LLAMA_CPP_DIR%\build\src\Release"
+if exist "%LLAMA_CPP_DIR%\build\src\llama.lib" set "LIB_DIR=%LLAMA_CPP_DIR%\build\src"
+if exist "%LLAMA_CPP_DIR%\build\bin\llama.lib" set "LIB_DIR=%LLAMA_CPP_DIR%\build\bin"
+
+if "%LIB_DIR%"=="" (
+    echo Error: Could not find llama.lib in %LLAMA_CPP_DIR%\build\src or its Release subfolders.
     echo Make sure you have successfully compiled llama.cpp with: cmake --build build --config Release
     exit /b 1
 )
