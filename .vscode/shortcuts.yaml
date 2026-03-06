@@ -1,0 +1,6 @@
+# Define your project-specific terminal shortcuts here.
+# Format: shortcut_name: command to run
+
+cam: conda activate moss
+moss: python .\clis\moss_tts2.py
+
